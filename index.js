@@ -15,6 +15,8 @@ const getFilenameFromMime = (name, mime) => {
 	return `${name}.${extensions[0].ext}`;
 };
 
+const multiDownloadItems = new Map();
+
 function registerListener(session, options, callback = () => {}) {
 	const downloadItems = new Set();
 	let receivedBytes = 0;
@@ -29,6 +31,11 @@ function registerListener(session, options, callback = () => {}) {
 	};
 
 	const listener = (event, item, webContents) => {
+	        if (multiDownloadItems.has(options)) {
+	          return;
+	        }
+	        multiDownloadItems.set(options, null);
+		
 		downloadItems.add(item);
 		totalBytes += item.getTotalBytes();
 
@@ -88,6 +95,7 @@ function registerListener(session, options, callback = () => {}) {
 		item.on('done', (event, state) => {
 			completedBytes += item.getTotalBytes();
 			downloadItems.delete(item);
+			multiDownloadItems.delete(options);
 
 			if (options.showBadge && ['darwin', 'linux'].includes(process.platform)) {
 				app.badgeCount = activeDownloadItems();
